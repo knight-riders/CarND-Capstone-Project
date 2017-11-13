@@ -1,5 +1,14 @@
 This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
 
+### Team Members
+|Name            |Udacity account email|
+|----------------- |-----------------------------|
+|Mario Landry (**Team Lead**) | mario.landry AT gmail.com |
+|Senthil Kumar | katpadi.senthil AT gmail.com |
+|Rob Fitch | rob.m.fitch AT gmail.com |
+|Rafael Rivas | rafael.rivas.dev AT gmail.com |
+|Patrick Poon | patrickmpoon AT gmail.com |
+
 ### Native Installation
 
 * Be sure that your workstation is running Ubuntu 16.04 Xenial Xerus or Ubuntu 14.04 Trusty Tahir. [Ubuntu downloads can be found here](https://www.ubuntu.com/download/desktop).
@@ -8,7 +17,7 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
   * 2 GB system memory
   * 25 GB of free hard drive space
 
-  The Udacity provided virtual machine has ROS and Dataspeed DBW already installed, so you can skip the next two steps if you are using this.
+  The Udacity team provided a virtual machine that has ROS and Dataspeed DBW already installed, so you can skip the next two steps if you are using this.
 
 * Follow these instructions to install ROS
   * [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu) if you have Ubuntu 16.04.
