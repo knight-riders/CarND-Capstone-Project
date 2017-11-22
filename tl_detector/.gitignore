@@ -1,1 +1,5 @@
 datasets/
+TF_Object_Detection_API/
+.ipynb_checkpoints
+models/train/
+data/*.record
