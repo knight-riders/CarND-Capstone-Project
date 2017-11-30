@@ -4,6 +4,7 @@ import rospy
 
 GAS_DENSITY = 2.858  # in kg/US gal
 ONE_MPH = 0.44704    # in m/s
+BRAKE_TORQUE_MAX = 3412.0  # in Nm
 
 class Controller(object):
     def __init__(self, *args, **kwargs):
@@ -72,7 +73,7 @@ class Controller(object):
         steer_cmd = max(-self.max_steer_angle, min(steer_cmd, self.max_steer_angle))
 
         if accel_cmd < 0.0:
-            brake = -accel_cmd
+            brake = -accel_cmd * BRAKE_TORQUE_MAX
             throttle = 0.0
         else:
             brake = 0.0
