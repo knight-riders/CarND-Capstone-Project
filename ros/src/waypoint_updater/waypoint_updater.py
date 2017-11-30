@@ -4,7 +4,7 @@ import math
 import rospy
 import tf
 from geometry_msgs.msg import PoseStamped
-from styx_msgs.msg import Lane
+from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Int32
 
 '''
@@ -37,7 +37,6 @@ class WaypointUpdater(object):
 
         self.current_pose = None
         self.base_waypoints = None
-        self.final_waypoints = None
         self.traffic_waypoint = None
         self.obstacle_waypoint = None
         self.psi = None
@@ -49,6 +48,7 @@ class WaypointUpdater(object):
             rate.sleep()
 
     def loop(self):
+
         if (self.current_pose is not None) and (self.base_waypoints is not None):
             # index of next waypoint
             next_index = self.get_next_waypoint(self.current_pose.pose)
@@ -65,14 +65,40 @@ class WaypointUpdater(object):
                 # (rejects false red/yellow light detections)
             else:
                 rospy.loginfo("NO TRAFFIC LIGHT")
-                lane.waypoints = self.base_waypoints.waypoints[next_index : (next_index + LOOKAHEAD_WPS)]
+                final_waypoints = self.get_final_waypoints(next_index)
 
-            self.publish(lane)
+            self.publish(final_waypoints)
 
-    def publish(self, lane):
+    def get_final_waypoints(self, next_index):
+        final_waypoints = []
+        wlen = len(self.base_waypoints.waypoints)
+
+        for i in range(LOOKAHEAD_WPS):
+            wp = Waypoint()
+            wp.pose.pose.position.x = self.base_waypoints.waypoints[(next_index+i)%wlen].pose.pose.position.x
+            wp.pose.pose.position.y = self.base_waypoints.waypoints[(next_index+i)%wlen].pose.pose.position.y
+            wp.pose.pose.position.z = self.base_waypoints.waypoints[(next_index+i)%wlen].pose.pose.position.z
+            wp.pose.pose.orientation.x = self.base_waypoints.waypoints[(next_index+i)%wlen].pose.pose.orientation.x
+            wp.pose.pose.orientation.y = self.base_waypoints.waypoints[(next_index+i)%wlen].pose.pose.orientation.y
+            wp.pose.pose.orientation.z = self.base_waypoints.waypoints[(next_index+i)%wlen].pose.pose.orientation.z
+            wp.pose.pose.orientation.w = self.base_waypoints.waypoints[(next_index+i)%wlen].pose.pose.orientation.w
+
+            wp.twist.twist.linear.x = self.base_waypoints.waypoints[(next_index+i)%wlen].twist.twist.linear.x
+            wp.twist.twist.linear.y = 0.0
+            wp.twist.twist.linear.z = 0.0
+            wp.twist.twist.angular.x = 0.0
+            wp.twist.twist.angular.y = 0.0
+            wp.twist.twist.angular.z = 0.0
+
+            final_waypoints.append(wp)
+
+        return final_waypoints
+
+    def publish(self, final_waypoints):
+        lane = Lane()
         lane.header.frame_id = '/world'
         lane.header.stamp = rospy.Time(0)
-        self.final_waypoints = lane.waypoints
+        lane.waypoints = final_waypoints
         self.final_waypoints_pub.publish(lane)
 
     # # Convert a waypoint from the world to the vehicle frame (from P10 - MPC project)
