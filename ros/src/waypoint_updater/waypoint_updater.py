@@ -40,7 +40,6 @@ class WaypointUpdater(object):
         self.final_waypoints = None
         self.traffic_waypoint = None
         self.obstacle_waypoint = None
-        self.current_velocity = None
         self.psi = None
 
         # Publish waypoint updates at 2Hz (no need for a faster loop here)
@@ -50,8 +49,7 @@ class WaypointUpdater(object):
             rate.sleep()
 
     def loop(self):
-        if self.current_pose and self.base_waypoints:
-
+        if (self.current_pose is not None) and (self.base_waypoints is not None):
             # index of next waypoint
             next_index = self.get_next_waypoint(self.current_pose.pose)
             # index of cloosest waypoint
@@ -59,7 +57,7 @@ class WaypointUpdater(object):
             lane = Lane()
 
             # generate final_waypoints
-            if self.traffic_waypoint and self.traffic_waypoint != -1:
+            if (self.traffic_waypoint is not None) and (self.traffic_waypoint != -1):
                 # Traffic light distance computation
                 tl_dist = self.distance(self.base_waypoints.waypoints, closest_index, self.traffic_waypoint)
 
@@ -77,23 +75,23 @@ class WaypointUpdater(object):
         self.final_waypoints = lane.waypoints
         self.final_waypoints_pub.publish(lane)
 
-    # Convert a waypoint from the world to the vehicle frame (from P10 - MPC project)
-    def get_local_xy(self, x, y):
-        shift_x = x - self.current_pose.pose.position.x
-        shift_y = y - self.current_pose.pose.position.y
+    # # Convert a waypoint from the world to the vehicle frame (from P10 - MPC project)
+    # def get_local_xy(self, x, y):
+    #     shift_x = x - self.current_pose.pose.position.x
+    #     shift_y = y - self.current_pose.pose.position.y
 
-        ptx =  shift_x * math.cos(self.psi) + shift_y * math.sin(self.psi)
-        pty = -shift_x * math.sin(self.psi) + shift_y * math.cos(self.psi)
-        return ptx, pty
+    #     ptx =  shift_x * math.cos(self.psi) + shift_y * math.sin(self.psi)
+    #     pty = -shift_x * math.sin(self.psi) + shift_y * math.cos(self.psi)
+    #     return ptx, pty
 
-    # Convert a wapoint from the vehicle frame to the vehicle frame (from P10 - MPC project)
-    def get_world_xy(self, ptx, pty):
-        shift_x = ptx * math.cos(self.psi) - pty * math.sin(self.psi)
-        shift_y = ptx * math.sin(self.psi) + pty * math.cos(self.psi)
+    # # Convert a wapoint from the vehicle frame to the vehicle frame (from P10 - MPC project)
+    # def get_world_xy(self, ptx, pty):
+    #     shift_x = ptx * math.cos(self.psi) - pty * math.sin(self.psi)
+    #     shift_y = ptx * math.sin(self.psi) + pty * math.cos(self.psi)
 
-        x = shift_x + self.current_pose.pose.position.x
-        y = shift_y + self.current_pose.pose.position.y
-        return x, y
+    #     x = shift_x + self.current_pose.pose.position.x
+    #     y = shift_y + self.current_pose.pose.position.y
+    #     return x, y
 
     # Get closest waypoint index(from P11 - Path planning project)
     def get_closest_waypoint(self, pose):

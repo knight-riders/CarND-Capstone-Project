@@ -19,7 +19,7 @@ class CarlaVisualization(object):
         rospy.Subscriber("/final_waypoints", Lane, self.final_waypoints_cb)
 
         # From Traffic Light Detection node to Waypoint Updater
-        # rospy.Subscriber("/traffic_waypoint", Lane, self.traffic_waypoint_cb)
+        # rospy.Subscriber("/traffic_waypoint", Int32, self.traffic_waypoint_cb)
 
         # From Car/Simulator
         rospy.Subscriber("/vehicle/traffic_lights", TrafficLightArray, self.traffic_light_ground_truth_cb)
@@ -59,6 +59,11 @@ class CarlaVisualization(object):
             pose.header.frame_id = frame_id
             pose.pose.position.x = wp_pose.position.x
             pose.pose.position.y = wp_pose.position.y
+            pose.pose.position.z = wp_pose.position.z
+            pose.pose.orientation.w = wp_pose.orientation.w
+            pose.pose.orientation.x = wp_pose.orientation.x
+            pose.pose.orientation.y = wp_pose.orientation.y
+            pose.pose.orientation.z = wp_pose.orientation.z
 
             path.poses.append(pose)
 
