@@ -64,9 +64,9 @@ class WaypointUpdater(object):
                 # TODO begin deceleration when close enough to a stop line, else don't modify the speed set point
                 # (rejects false red/yellow light detections)
             else:
-                rospy.loginfo("NO TRAFFIC LIGHT")
-                final_waypoints = self.get_final_waypoints(next_index)
+                rospy.loginfo("NOT RED LIGHT")
 
+            final_waypoints = self.get_final_waypoints(next_index)
             self.publish(final_waypoints)
 
     def get_final_waypoints(self, next_index):
