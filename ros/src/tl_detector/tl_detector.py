@@ -41,6 +41,9 @@ class TLDetector(object):
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
 
+        # List of positions that correspond to the line to stop in front of for a given intersection
+        self.stopline_positions = self.config['stop_line_positions']
+
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
         self.bridge = CvBridge()
@@ -107,21 +110,22 @@ class TLDetector(object):
         """Calculates the distance between two points
 
         Args:
-            float: First point's x-coordinate
-            float: First point's y-coordinate
-            float: Second point's x-coordinate
-            float: Second point's y-coordinate
+            x1 (float): First point's x-coordinate
+            x2 (float): First point's y-coordinate
+            y1 (float): Second point's x-coordinate
+            y2 (float): Second point's y-coordinate
 
         Returns:
             float: Distance between the two provided points
         """
         return math.sqrt((x1-x2)**2 + (y1-y2)**2)
 
-    def get_closest_waypoint(self, pose):
+    def get_closest_waypoint_idx(self, x, y):
         """Identifies the closest path waypoint to the given position
             https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
         Args:
-            pose (Pose): position to match a waypoint to
+            x (float): point x-coordinate to match a waypoint to
+            y (float): point y-coordinate to match a waypoint to
 
         Returns:
             int: index of the closest waypoint in self.waypoints
@@ -130,7 +134,7 @@ class TLDetector(object):
         shortest_distance = HIGHEST_NUM
         closest_wp = -1
         for idx, wp in enumerate(self.waypoints):
-            distance = self.calc_distance(pose.position.x, pose.position.y, wp.pose.pose.position.x,
+            distance = self.calc_distance(x, y, wp.pose.pose.position.x,
                                           wp.pose.pose.position.y)
             if distance < shortest_distance:
                 shortest_distance = distance
@@ -141,8 +145,8 @@ class TLDetector(object):
         """Determines whether a waypoint is ahead of the car
 
         Args:
-            float: waypoint's global x-coordinate
-            float: waypoint's global y-coordinate
+            wp_x (float): waypoint's global x-coordinate
+            wp_y (float): waypoint's global y-coordinate
 
         Returns:
             bool: Whether the waypoint is ahead of the car
@@ -156,28 +160,26 @@ class TLDetector(object):
         return ((wp_x - car_x) * math.cos(car_yaw) +
                 (wp_y - car_y) * math.sin(car_yaw)) > 0
 
-    def get_closest_tl_idx(self):
-        """Determine the index of the closest traffic light
+    def get_closest_stopline_idx(self):
+        """Determine the index of the closest traffic light stopline
 
         Returns:
-             int: Index of closest traffic light
+             int: Index of closest traffic light stopline
         """
-        closest_tl_idx = -1
+        closest_stopline_idx = -1
         shortest_dist = HIGHEST_NUM
-        for idx, light in enumerate(self.lights):
-            tl = light.pose.pose.position
-            if self.is_waypoint_ahead(tl.x, tl.y):
-                car_x = self.pose.position.x
-                car_y = self.pose.position.y
-                distance = self.calc_distance(car_x, car_y, tl.x, tl.y)
+        for idx, (sl_x, sl_y) in enumerate(self.stopline_positions):
+            if self.is_waypoint_ahead(sl_x, sl_y):
+                car_x, car_y = self.pose.position.x, self.pose.position.y
+                distance = self.calc_distance(car_x, car_y, sl_x, sl_y)
                 if distance < shortest_dist:
                     shortest_dist = distance
-                    closest_tl_idx = idx
+                    closest_stopline_idx = idx
                 else:
                     continue
             else:
                 continue
-        return closest_tl_idx
+        return closest_stopline_idx
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
@@ -208,20 +210,21 @@ class TLDetector(object):
 
         """
         light = None
-        light_wp = -1
+        stopline_wp_idx = -1
 
-        # List of positions that correspond to the line to stop in front of for a given intersection
-        stop_line_positions = self.config['stop_line_positions']
         if(self.pose):
-            light_wp = self.get_closest_tl_idx()
-            light = self.lights[light_wp]
+            stopline_idx = self.get_closest_stopline_idx()
+            sl_x, sl_y = self.stopline_positions[stopline_idx]
+            stopline_wp_idx = self.get_closest_waypoint_idx(sl_x, sl_y)
+
+            light = self.lights[stopline_idx]
 
 
         #TODO find the closest visible traffic light (if one exists)
 
         if light:
             state = self.get_light_state(light)
-            return light_wp, state
+            return stopline_wp_idx, state
         self.waypoints = None
         return -1, TrafficLight.UNKNOWN
 
