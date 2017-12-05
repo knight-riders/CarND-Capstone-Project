@@ -4,7 +4,7 @@ import math
 import rospy
 import tf
 from geometry_msgs.msg import PoseStamped
-from styx_msgs.msg import Lane, Waypoint
+from styx_msgs.msg import Lane, Waypoint, TrafficLightArray
 from std_msgs.msg import Int32
 
 '''
@@ -32,6 +32,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb, queue_size=1)
         rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb, queue_size=1)
+        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.lights_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -48,8 +49,8 @@ class WaypointUpdater(object):
             rate.sleep()
 
     def loop(self):
-
         if (self.current_pose is not None) and (self.base_waypoints is not None):
+
             # index of next waypoint
             next_index = self.get_next_waypoint(self.current_pose.pose)
             # index of cloosest waypoint
@@ -57,16 +58,40 @@ class WaypointUpdater(object):
             lane = Lane()
 
             # generate final_waypoints
-            if (self.traffic_waypoint is not None) and (self.traffic_waypoint != -1):
+            final_waypoints = self.get_final_waypoints(next_index)
+
+            # deceleration gradient for safer stopping
+            dist_vel = 0.9
+
+            # estimated stop line distance from light
+            light_standoff = 30
+            decel_zone = (final_waypoints[0].twist.twist.linear.x) * (1/dist_vel)
+
+            rospy.loginfo(self.traffic_waypoint)
+
+            if (self.traffic_waypoint is None) or (self.traffic_waypoint == -1):
+                rospy.loginfo("NO LIGHT")
+            elif (self.traffic_lights.lights[self.traffic_waypoint].state > 1):
+                rospy.loginfo("GREEN LIGHT, next waypoint speed " + str(final_waypoints[0].twist.twist.linear.x))
+            else:
                 # Traffic light distance computation
-                tl_dist = self.distance(self.base_waypoints.waypoints, closest_index, self.traffic_waypoint)
+                tl_waypoint = self.get_closest_waypoint(self.traffic_lights.lights[self.traffic_waypoint].pose.pose)
+                tl_dist = self.distance(self.base_waypoints.waypoints, closest_index, tl_waypoint) - light_standoff
+
+                if (tl_dist <= decel_zone):
+                    for i in range(LOOKAHEAD_WPS):
+                        current_i = (closest_index + i) % len(self.base_waypoints.waypoints)
+                        stop_vel = tl_dist * dist_vel
+                        base_vel = self.base_waypoints.waypoints[current_i].twist.twist.linear.x
+                        if (stop_vel < base_vel) and (stop_vel > -5):
+                            self.set_waypoint_velocity(final_waypoints, i, stop_vel)
+                rospy.loginfo("RED LIGHT: Light Distance " + str(tl_dist) + 
+                  ", next waypoint speed " + str(final_waypoints[0].twist.twist.linear.x))
+
 
                 # TODO begin deceleration when close enough to a stop line, else don't modify the speed set point
                 # (rejects false red/yellow light detections)
-            else:
-                rospy.loginfo("NOT RED LIGHT")
-
-            final_waypoints = self.get_final_waypoints(next_index)
+            
             self.publish(final_waypoints)
 
     def get_final_waypoints(self, next_index):
@@ -167,6 +192,9 @@ class WaypointUpdater(object):
 
     def traffic_cb(self, msg):
         self.traffic_waypoint = msg.data
+
+    def lights_cb(self, traffic_lights):
+        self.traffic_lights = traffic_lights
 
     def obstacle_cb(self, msg):
         # Callback for /obstacle_waypoint message. Will be implemented by Udacity later..
