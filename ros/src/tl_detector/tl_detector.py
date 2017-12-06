@@ -259,13 +259,14 @@ class TLDetector(object):
         light = None
         stopline_wp_idx = None
 
-        if(self.pose):
+        if self.pose is not None:
             stopline_idx = self.get_closest_stopline_idx()
-            sl_x, sl_y = self.stopline_positions[stopline_idx]
-            stopline_wp_idx = self.get_stopline_wp_idx(sl_x, sl_y)
-            light = self.lights[stopline_idx]
+            if stopline_idx is not None:
+                sl_x, sl_y = self.stopline_positions[stopline_idx]
+                stopline_wp_idx = self.get_stopline_wp_idx(sl_x, sl_y)
+                light = self.lights[stopline_idx]
 
-        if light:
+        if light is not None:
             state = self.get_light_state(light)
             return stopline_wp_idx, state
         self.waypoints = None
