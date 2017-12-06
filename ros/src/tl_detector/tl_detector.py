@@ -15,7 +15,7 @@ import yaml
 
 STATE_COUNT_THRESHOLD = 3
 HIGHEST_NUM = float('inf')
-
+USE_TL_GROUND_TRUTH = True
 
 class TLDetector(object):
     def __init__(self):
@@ -28,7 +28,6 @@ class TLDetector(object):
 
         sub_curr_pose = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub_base_waypts = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-
         '''
         /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
         helps you acquire an accurate ground truth data source for the traffic light
@@ -74,9 +73,6 @@ class TLDetector(object):
                 of times till we start using it. Otherwise the previous stable state is
                 used.
                 '''
-                #TODO remove
-                state = TrafficLight.RED
-
                 if self.state != state:
                     self.state_count = 0
                     self.state = state
@@ -223,8 +219,11 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        #Get classification
-        return self.light_classifier.get_classification(cv_image)
+        if USE_TL_GROUND_TRUTH is False:
+            #Get TL classification
+            return self.light_classifier.get_classification(cv_image)
+        else:
+            return light.state
 
     def get_stopline_wp_idx(self, sl_x, sl_y):
         """Determines a stop line's waypoint index value
