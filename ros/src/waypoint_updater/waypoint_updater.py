@@ -74,16 +74,17 @@ class WaypointUpdater(object):
             obstacles = []
             # check for obstacles
             if (self.obstacle_waypoint is not None):
-                obs_standoff = 40  # Preferred stopping distance from obstacle
+                obs_standoff = 10  # Preferred stopping distance from obstacle
                 for point in self.obstacle_waypoint:
                     obs = self.get_closest_waypoint(point.pose.pose) 
                     obstacles.append((obs, obs_standoff))
 
             # check for red lights
             if (self.traffic_waypoint is not None) and (self.traffic_waypoint != -1):
-                tl_standoff = 30  # Preferred stopping distance from obstacle
-                obs = self.get_closest_waypoint(self.traffic_lights.lights[self.traffic_waypoint].pose.pose)
-                obstacles.append((obs, tl_standoff))
+                tl_standoff = 5  # Preferred stopping distance from obstacle
+                rospy.loginfo("TRAFFIC WAYPOINT")
+                rospy.loginfo(self.traffic_waypoint)
+                obstacles.append((self.traffic_waypoint, tl_standoff))
 
             # Deceleration zone for smooth speed transitions
             decel_zone = 120
