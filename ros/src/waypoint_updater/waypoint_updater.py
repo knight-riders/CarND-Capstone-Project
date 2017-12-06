@@ -3,7 +3,7 @@
 import math
 import rospy
 import tf
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint, TrafficLightArray
 from std_msgs.msg import Int32
 
@@ -23,6 +23,9 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+MAX_ACCEL = 1 # max acceleration in m/s2
+OBS_STANDOFF = 10  # Preferred stopping distance from obstacle in m
+TL_STANDOFF = 5  # Preferred stopping distance from obstacle in m
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -32,7 +35,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb, queue_size=1)
         rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb, queue_size=1)
-        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.lights_cb)
+        rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -40,6 +43,7 @@ class WaypointUpdater(object):
         self.base_waypoints = None
         self.traffic_waypoint = None
         self.obstacle_waypoint = None
+        self.linear_velocity = None
         self.psi = None
 
         # Publish waypoint updates at 2Hz (no need for a faster loop here)
@@ -50,23 +54,13 @@ class WaypointUpdater(object):
 
     def loop(self):
         if (self.current_pose is not None) and (self.base_waypoints is not None):
-            
-            # FOR OBSTACLE TESTING
-            #self.obstacle_waypoint = []
-            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[0])
-            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[2000])
-            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[4000])
-            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[6000])
-            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[8000])
 
             # index of next waypoint
             next_index = self.get_next_waypoint(self.current_pose.pose)
-            # index of cloosest waypoint
+            # index of closest waypoint
             closest_index = self.get_closest_waypoint(self.current_pose.pose)
-            rospy.loginfo("CURRENT WAYPOINT: " + str(closest_index))
+            #rospy.loginfo("CURRENT WAYPOINT: " + str(closest_index))
             lane = Lane()
-
-            dist_vel = 0.9  # deceleration gradient for safer stopping
 
             # generate final_waypoints
             final_waypoints = self.get_final_waypoints(next_index)
@@ -74,36 +68,47 @@ class WaypointUpdater(object):
             obstacles = []
             # check for obstacles
             if (self.obstacle_waypoint is not None):
-                obs_standoff = 10  # Preferred stopping distance from obstacle
                 for point in self.obstacle_waypoint:
                     obs = self.get_closest_waypoint(point.pose.pose) 
-                    obstacles.append((obs, obs_standoff))
+                    obstacles.append((obs, OBS_STANDOFF))
 
             # check for red lights
             if (self.traffic_waypoint is not None) and (self.traffic_waypoint != -1):
-                tl_standoff = 5  # Preferred stopping distance from obstacle
-                rospy.loginfo("TRAFFIC WAYPOINT")
-                rospy.loginfo(self.traffic_waypoint)
-                obstacles.append((self.traffic_waypoint, tl_standoff))
+                #rospy.loginfo("TRAFFIC WAYPOINT :" + str(self.traffic_waypoint))
+                obstacles.append((self.traffic_waypoint, TL_STANDOFF))
 
-            # Deceleration zone for smooth speed transitions
-            decel_zone = 120
+            # Deceleration zone for smooth speed transitions in m
+            decel_zone = -self.linear_velocity**2/(2 * -MAX_ACCEL)
+            #rospy.loginfo("Decel Zone :" + str(decel_zone))
 
             if (len(obstacles) > 0):
-                for (obs, obs_standoff) in obstacles:
-                    # Obstacle distance computation
-                    obs_dist = self.distance(self.base_waypoints.waypoints, next_index, obs) - obs_standoff
+                for (obs, standoff) in obstacles:
+                    obs_dist = self.distance(self.base_waypoints.waypoints, next_index, obs) - standoff
                     
-                    if (obs_dist <= decel_zone):
-                        for i in range(LOOKAHEAD_WPS):
-                            next_i = (next_index + i) % len(self.base_waypoints.waypoints)
-                            obs_dist = self.distance(self.base_waypoints.waypoints, next_i, obs) - obs_standoff
-                            stop_vel = obs_dist * dist_vel
-                            base_vel = self.base_waypoints.waypoints[next_i].twist.twist.linear.x
-                            if (stop_vel < base_vel) and (stop_vel > -5):
-                                self.set_waypoint_velocity(final_waypoints, i, stop_vel)
+                    # Obstacle with standoff waypoint index
+                    obs_idx_wp = obs
+                    dist = 0
+                    while dist < standoff:
+                        obs_idx_wp -= 1
+                        dist = self.distance(self.base_waypoints.waypoints, obs_idx_wp, obs)
 
-            
+                    #rospy.loginfo("Obstacle Dist :" + str(obs_dist) + " Obstacle Index :" + str(obs_idx_wp))
+
+                    if (-standoff <= obs_dist <= decel_zone):
+                        # obstacle index with standoff in /final_waypoints
+                        obs_idx_final_wp = obs_idx_wp - next_index
+                       
+                        # every speed setpoints to 0
+                        for i in range(LOOKAHEAD_WPS):
+                            self.set_waypoint_velocity(final_waypoints, i, 0.0)
+
+                        # Looping backward from the obstacle
+                        for i in range(obs_idx_final_wp, 0, -1):
+                            inter_wp_dist = self.distance(final_waypoints, i-1, i)
+                            next_vel = math.sqrt(self.get_waypoint_velocity(final_waypoints[i])**2 + 2*MAX_ACCEL*inter_wp_dist)
+                            #rospy.loginfo("next vel :" + str(next_vel) + " index :" + str(i))
+                            self.set_waypoint_velocity(final_waypoints, i-1, next_vel)
+                            
             self.publish(final_waypoints)
 
     def get_final_waypoints(self, next_index):
@@ -205,12 +210,12 @@ class WaypointUpdater(object):
     def traffic_cb(self, msg):
         self.traffic_waypoint = msg.data
 
-    def lights_cb(self, traffic_lights):
-        self.traffic_lights = traffic_lights
-
     def obstacle_cb(self, msg):
         # Callback for /obstacle_waypoint message. Will be implemented by Udacity later..
         self.obstacle_waypoint = msg.data
+
+    def current_velocity_cb(self, msg):
+        self.linear_velocity = msg.twist.linear.x
 
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
@@ -226,6 +231,15 @@ class WaypointUpdater(object):
     def distance(self, waypoints, wp1, wp2):
         dist = 0
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+
+        # to enable loopback..
+        len_wp = len(waypoints)
+        if wp2 <= len_wp/2 and wp1 > len_wp/2:
+            for i in range(wp1, len_wp):
+                dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
+                wp1 = i
+            wp1 = 0
+
         for i in range(wp1, wp2+1):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i

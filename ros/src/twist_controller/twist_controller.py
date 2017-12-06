@@ -53,9 +53,14 @@ class Controller(object):
                                 ])
             # if linear_velocity_cmd is below or equal to actual velocity but the car is still moving
             elif self.linear_velocity > 0.1:
-                accel_cmd = max([4 * (self.linear_velocity_cmd-self.linear_velocity-0.1) / self.linear_velocity,
-                                 self.max_brake_perc
-                                ])
+                if self.linear_velocity_cmd > 0.0:
+                    accel_cmd = max([0.5 * (self.linear_velocity_cmd-self.linear_velocity-0.1) / self.linear_velocity_cmd,
+                                    self.max_brake_perc
+                                    ])
+                else:
+                    accel_cmd = max([0.5 * (self.linear_velocity_cmd-self.linear_velocity-0.1) / self.linear_velocity,
+                                    self.max_brake_perc
+                                    ])
             else:
                 # hold the brake when the car is standstill
                 accel_cmd = -0.01
