@@ -50,11 +50,20 @@ class WaypointUpdater(object):
 
     def loop(self):
         if (self.current_pose is not None) and (self.base_waypoints is not None):
+            
+            # FOR OBSTACLE TESTING
+            #self.obstacle_waypoint = []
+            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[0])
+            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[2000])
+            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[4000])
+            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[6000])
+            #self.obstacle_waypoint.append(self.base_waypoints.waypoints[8000])
 
             # index of next waypoint
             next_index = self.get_next_waypoint(self.current_pose.pose)
             # index of cloosest waypoint
             closest_index = self.get_closest_waypoint(self.current_pose.pose)
+            rospy.loginfo("CURRENT WAYPOINT: " + str(closest_index))
             lane = Lane()
 
             dist_vel = 0.9  # deceleration gradient for safer stopping
@@ -65,13 +74,13 @@ class WaypointUpdater(object):
             obstacles = []
             # check for obstacles
             if (self.obstacle_waypoint is not None):
-                obs_standoff = 10  # Preferred stopping distance from obstacle
+                obs_standoff = 40  # Preferred stopping distance from obstacle
                 for point in self.obstacle_waypoint:
                     obs = self.get_closest_waypoint(point.pose.pose) 
                     obstacles.append((obs, obs_standoff))
 
             # check for red lights
-            if (self.traffic_waypoint is not None) or (self.traffic_waypoint != -1):
+            if (self.traffic_waypoint is not None) and (self.traffic_waypoint != -1):
                 tl_standoff = 30  # Preferred stopping distance from obstacle
                 obs = self.get_closest_waypoint(self.traffic_lights.lights[self.traffic_waypoint].pose.pose)
                 obstacles.append((obs, tl_standoff))
