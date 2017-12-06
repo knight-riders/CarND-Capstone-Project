@@ -57,40 +57,42 @@ class WaypointUpdater(object):
             closest_index = self.get_closest_waypoint(self.current_pose.pose)
             lane = Lane()
 
+            dist_vel = 0.9  # deceleration gradient for safer stopping
+
             # generate final_waypoints
             final_waypoints = self.get_final_waypoints(next_index)
 
-            # deceleration gradient for safer stopping
-            dist_vel = 0.9
+            obstacles = []
+            # check for obstacles
+            if (self.obstacle_waypoint is not None):
+                obs_standoff = 10  # Preferred stopping distance from obstacle
+                for point in self.obstacle_waypoint:
+                    obs = self.get_closest_waypoint(point.pose.pose) 
+                    obstacles.append((obs, obs_standoff))
 
-            # estimated stop line distance from light
-            light_standoff = 30
-            decel_zone = (final_waypoints[0].twist.twist.linear.x) * (1/dist_vel)
+            # check for red lights
+            if (self.traffic_waypoint is not None) or (self.traffic_waypoint != -1):
+                tl_standoff = 30  # Preferred stopping distance from obstacle
+                obs = self.get_closest_waypoint(self.traffic_lights.lights[self.traffic_waypoint].pose.pose)
+                obstacles.append((obs, tl_standoff))
 
-            rospy.loginfo(self.traffic_waypoint)
+            # Deceleration zone for smooth speed transitions
+            decel_zone = 120
 
-            if (self.traffic_waypoint is None) or (self.traffic_waypoint == -1):
-                rospy.loginfo("NO LIGHT")
-            elif (self.traffic_lights.lights[self.traffic_waypoint].state > 1):
-                rospy.loginfo("GREEN LIGHT, next waypoint speed " + str(final_waypoints[0].twist.twist.linear.x))
-            else:
-                # Traffic light distance computation
-                tl_waypoint = self.get_closest_waypoint(self.traffic_lights.lights[self.traffic_waypoint].pose.pose)
-                tl_dist = self.distance(self.base_waypoints.waypoints, closest_index, tl_waypoint) - light_standoff
+            if (len(obstacles) > 0):
+                for (obs, obs_standoff) in obstacles:
+                    # Obstacle distance computation
+                    obs_dist = self.distance(self.base_waypoints.waypoints, next_index, obs) - obs_standoff
+                    
+                    if (obs_dist <= decel_zone):
+                        for i in range(LOOKAHEAD_WPS):
+                            next_i = (next_index + i) % len(self.base_waypoints.waypoints)
+                            obs_dist = self.distance(self.base_waypoints.waypoints, next_i, obs) - obs_standoff
+                            stop_vel = obs_dist * dist_vel
+                            base_vel = self.base_waypoints.waypoints[next_i].twist.twist.linear.x
+                            if (stop_vel < base_vel) and (stop_vel > -5):
+                                self.set_waypoint_velocity(final_waypoints, i, stop_vel)
 
-                if (tl_dist <= decel_zone):
-                    for i in range(LOOKAHEAD_WPS):
-                        current_i = (closest_index + i) % len(self.base_waypoints.waypoints)
-                        stop_vel = tl_dist * dist_vel
-                        base_vel = self.base_waypoints.waypoints[current_i].twist.twist.linear.x
-                        if (stop_vel < base_vel) and (stop_vel > -5):
-                            self.set_waypoint_velocity(final_waypoints, i, stop_vel)
-                rospy.loginfo("RED LIGHT: Light Distance " + str(tl_dist) + 
-                  ", next waypoint speed " + str(final_waypoints[0].twist.twist.linear.x))
-
-
-                # TODO begin deceleration when close enough to a stop line, else don't modify the speed set point
-                # (rejects false red/yellow light detections)
             
             self.publish(final_waypoints)
 
