@@ -15,7 +15,8 @@ import yaml
 
 STATE_COUNT_THRESHOLD = 3
 HIGHEST_NUM = float('inf')
-USE_TL_GROUND_TRUTH = True
+USE_TL_GROUND_TRUTH = False
+
 
 class TLDetector(object):
     def __init__(self):
@@ -197,10 +198,7 @@ class TLDetector(object):
                 if distance < shortest_dist:
                     shortest_dist = distance
                     closest_stopline_idx = idx
-                else:
-                    continue
-            else:
-                continue
+
         return closest_stopline_idx
 
     def get_light_state(self, light):
