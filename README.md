@@ -6,7 +6,6 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 |Name            |Udacity account email|
 |----------------- |-----------------------------|
 |Mario Landry (**Team Lead**) | mario.landry AT gmail.com |
-|Senthil Kumar | katpadi.senthil AT gmail.com |
 |Rob Fitch | rob.m.fitch AT gmail.com |
 |Rafael Rivas | rafael.rivas.dev AT gmail.com |
 |Patrick Poon | patrickmpoon AT gmail.com |
