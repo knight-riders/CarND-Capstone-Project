@@ -11,6 +11,76 @@ from sensor_msgs.msg import Image
 
 #PATH_TO_CKPT = '../../../tl_detector/fine_tuned_sim_model/frozen_inference_graph.pb'
 
+class Timer:
+    def __init__(self, message = ''):
+        self.message = message
+    def __enter__(self):
+        self.start = time.clock()
+        return self
+    def __exit__(self, *args):
+        message = '{} in {} seconds'.format(self.message, time.clock() - self.start)
+        # rospy.loginfo(message)
+
+# Function to load a graph from a protobuf file
+def _load_graph(graph_file, config, verbose = False):
+    with tf.Session(graph=tf.Graph(), config=config) as sess:
+        assert tf.get_default_session() is sess
+        gd = tf.GraphDef()
+        with tf.gfile.Open(graph_file, 'rb') as f:
+            data = f.read()
+            gd.ParseFromString(data)
+        tf.import_graph_def(gd, name='')
+        graph = tf.get_default_graph()
+        if verbose:
+            print ('Graph v' + str(graph.version) + ', nodes: '+ ', '.join([n.name for n in graph.as_graph_def().node]))
+        return graph
+
+# extract traffic light box with maximal confidence
+def _extractBox(boxes, scores, classes, confidence, im_width, im_height):
+    # Prepare stuff
+    boxes = np.squeeze(boxes)
+    classes = np.squeeze(classes).astype(np.int32)
+    scores = np.squeeze(scores)
+
+    # Get bounding box with highest confidence
+    maxConf = 0
+    number = -1
+    for i in range(boxes.shape[0]):
+        if scores[i] > confidence and classes[i] == 10:
+            if scores[i] > maxConf:
+                maxConf = scores[i]
+                number = i
+
+    if number != -1:
+        # Create a tuple for earch box
+        box = tuple(boxes[number].tolist())
+
+        # Extract box corners
+        ymin, xmin, ymax, xmax = box
+        (left, right, top, bottom) = (xmin * im_width, xmax * im_width,
+                            ymin * im_height, ymax * im_height)
+
+        # Expand them a little bit
+        left = left - 5
+        if left < 0:
+            left = 0
+        top = top - 10
+        if top < 0:
+            top = 0
+        bottom = bottom + 10
+        if bottom > im_height:
+            bottom = im_height
+        right = right + 5
+        if right > im_width:
+            right = im_width
+        box = int(left), int(right), int(top), int(bottom)
+        return box
+
+    else:
+        return None
+
+
+
 class TLClassifier(object):
     def __init__(self, model_dir = None):
 
@@ -123,5 +193,3 @@ if __name__ == "__main__":
     classifier = TLClassifier(model_dir = 'model')
     classifier.publish_traffic_light = False
     images_dir = 'images'
-
-        
