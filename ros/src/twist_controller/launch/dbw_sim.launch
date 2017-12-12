@@ -11,7 +11,7 @@
         <param name="steer_ratio" value="14.8" />
         <param name="max_lat_accel" value="3." />
         <param name="max_steer_angle" value="8." />
-        <param name="min_speed" value="1.78816"/>  <!-- 4mph in m/s -->
+        <param name="min_speed" value="0.1"/>
         <param name="sample_time" value="0.02" />
         <param name="max_throttle_perc" value="1.0" />
         <param name="max_brake_perc" value="-1.0" />
