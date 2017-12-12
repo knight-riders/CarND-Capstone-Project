@@ -10,6 +10,15 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 |Rafael Rivas | rafael.rivas.dev AT gmail.com |
 |Patrick Poon | patrickmpoon AT gmail.com |
 
+### Project Implementation
+
+## Waypoint Updater
+The waypoint updater is responsible for calculating the next LOOKAHEAD_WPS (200) Waypoints and setting a target velocity for each. The default target velocity at each waypoint is set at system startup and recorded into the base waypoints. This velocity is used as a ceiling for the vehicle velocity and intentionally left unaltered by the waypoint updater. At each call to the waypoint updater, a subset of the base waypoint list is created of length LOOKAHEAD_WPS, starting with the calculated NEXT_WAYPOINT. The velocities of these waypoints are then set to allow smooth and safe deceleration for any obstacles the car encounters. To aid in this, the current vehicle velocity and maximum acceleration value are used to determine the distance required by the vehicle to safely stop. This value is recorded as the deceleration zone or decel_zone.  
+
+The waypoint updater subscribes to a list of obstacles as well as a waypoint for the next light. If either of these are populated, they indicate zones the car should not pass through. The traffic light waypoint, if present, is appended to the end of the list of obstacles. Each waypoint in the obstacle list is accompanied by a standoff distance, indicating how far before reaching the obstacle the car should attempt to stop. The standoff value is determined based on the subscription providing the obstacle.  
+
+For every waypoint in the obstacle list found to be within the respective deceleration zone plus standoff distance, a stopping gradient is calculated. The velocity at each final waypoint is the lowest value among these stopping gradients and the velocity already set for the waypoint.  
+
 ### Native Installation
 
 * Be sure that your workstation is running Ubuntu 16.04 Xenial Xerus or Ubuntu 14.04 Trusty Tahir. [Ubuntu downloads can be found here](https://www.ubuntu.com/download/desktop).
