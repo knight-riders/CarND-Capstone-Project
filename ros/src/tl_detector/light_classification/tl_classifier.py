@@ -9,8 +9,6 @@ from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import Bool
 from sensor_msgs.msg import Image
 
-#PATH_TO_CKPT = '../../../tl_detector/fine_tuned_sim_model/frozen_inference_graph.pb'
-
 class Timer:
     def __init__(self, message = ''):
         self.message = message

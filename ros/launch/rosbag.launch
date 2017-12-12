@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- Play ROSBAG (-l to loop) and remap outputs..-->
+    <node pkg="rosbag" type="play" name="rosbag" args="-l $(find styx)../../bag/harsh_conditions.bag /traffic_waypoint:=/actual/traffic_waypoint /vehicle/throttle_cmd:=/actual/throttle_cmd /vehicle/steering_cmd:=/actual/steering_cmd /vehicle/brake_cmd:=/actual/brake_cmd" required="true"/>
+
+    <!--Visualization Node -->
+    <include file="$(find carla_visualization)/launch/carla_visualization_rosbag.launch"/>
+
     <!--DBW Node -->
     <include file="$(find twist_controller)/launch/dbw.launch"/>
 
-    <!--Waypoint Loader -->
-    <include file="$(find waypoint_loader)/launch/waypoint_loader_site.launch"/>
-
     <!--Waypoint Follower Node -->
     <include file="$(find waypoint_follower)/launch/pure_pursuit.launch"/>
-
-    <!--Waypoint Updater Node -->
-    <include file="$(find waypoint_updater)/launch/waypoint_updater.launch"/>
 
     <!--Traffic Light Locations and Camera Config -->
     <param name="traffic_light_config" textfile="$(find tl_detector)/site_traffic_light_config.yaml" />
 
     <!--Traffic Light Detector Node -->
-    <include file="$(find tl_detector)/launch/tl_detector_site.launch"/>
+    <include file="$(find tl_detector)/launch/tl_detector-debug.launch"/>
 
     <!--Camera Calibration YAML -->
     <param name="grasshopper_calibration_yaml" textfile="$(find styx)../../../data/grasshopper_calibration.yml" />

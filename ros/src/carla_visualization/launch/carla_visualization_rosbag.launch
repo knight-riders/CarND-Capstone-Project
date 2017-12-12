@@ -1,0 +1,12 @@
+<?xml version='1.0'?>
+<launch>
+    <node name="ros" pkg="rqt_gui" type="rqt_gui" respawn="false"
+	output="screen" args="--perspective-file $(find carla_visualization)/cfg/rqt.perspective"/>
+
+    <node pkg="rviz" type="rviz" name="rviz"
+        args="--display-config $(find carla_visualization)/rviz/default.rviz"/>
+    
+    <node pkg="rqt_graph" type="rqt_graph" name="rqt_graph"/>
+
+    <node pkg="carla_visualization" type="carla_visualization.py" name="carla_visualization"/>
+</launch>

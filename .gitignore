@@ -1,6 +1,6 @@
 *.py[cod]
 .idea/
-
+*.csv
 build
 devel
 profile.tmp

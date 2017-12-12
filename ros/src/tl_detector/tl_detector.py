@@ -218,10 +218,11 @@ class TLDetector(object):
             return False
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        crop = cv_image[0:400,0:800].copy()
 
         if self.use_classifier is True:
             #Get TL classification
-            return self.light_classifier.get_classification(cv_image)
+            return self.light_classifier.get_classification(crop)
         else:
             return light.state
 
