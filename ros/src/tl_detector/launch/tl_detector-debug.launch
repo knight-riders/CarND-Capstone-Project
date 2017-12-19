@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <node pkg="tl_detector" type="tl_detector.py" name="tl_detector" output="screen" cwd="node">
+    <param name="publish_traffic_light" value="true" type="bool" />
     <param name="use_classifier" value="true" type="bool" />
     <param name="camera_topic" value="/image_color" />
   </node>

@@ -69,6 +69,15 @@ class TLDetector(object):
         while not rospy.is_shutdown():
             if self.pose is not None and self.waypoints is not None and self.has_image:
                 light_wp, state = self.process_traffic_lights()
+                
+                if state == TrafficLight.RED:
+                    rospy.loginfo("RED!")
+                elif state == TrafficLight.YELLOW:
+                    rospy.loginfo("YELLOW!")
+                elif state == TrafficLight.GREEN:
+                    rospy.loginfo("GREEN!")
+                elif state == TrafficLight.UNKNOWN:
+                    rospy.loginfo("UNKNOWN!")
 
                 '''
                 Publish upcoming red lights at a fixed frequency.
@@ -270,7 +279,7 @@ class TLDetector(object):
         if light is not None:
             state = self.get_light_state(light)
             return stopline_wp_idx, state
-        self.waypoints = None
+
         return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':
