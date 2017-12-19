@@ -84,7 +84,7 @@ class Controller(object):
             brake = 0.0
             throttle = accel_cmd
 
-        if self.dbw_enabled is True:
-            rospy.loginfo("throttle: "+str(throttle)+"\tbrake: "+str(brake)+"\tsteer: "+str(steer_cmd))
+        #if self.dbw_enabled is True:
+        #    rospy.loginfo("throttle: "+str(throttle)+"\tbrake: "+str(brake)+"\tsteer: "+str(steer_cmd))
 
         return throttle, brake, steer_cmd
