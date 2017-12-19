@@ -274,9 +274,6 @@ class TLDetector(object):
             if stopline_idx is not None and len(self.lights) >= 1:
                 sl_x, sl_y = self.stopline_positions[stopline_idx]
                 stopline_wp_idx = self.get_stopline_wp_idx(sl_x, sl_y)
-                rospy.loginfo("Stopline waypoint index "+ str(stopline_wp_idx))
-                rospy.loginfo("Stopline index "+ str(stopline_idx))
-
                 light = self.lights[stopline_idx]
 
         if light is not None:

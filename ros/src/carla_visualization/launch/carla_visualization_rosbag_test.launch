@@ -1,7 +1,0 @@
-<?xml version='1.0'?>
-<launch>
-    <node pkg="rviz" type="rviz" name="rviz"
-        args="--display-config $(find carla_visualization)/rviz/default.rviz"/>
-
-    <node pkg="carla_visualization" type="carla_visualization.py" name="carla_visualization"/>
-</launch>

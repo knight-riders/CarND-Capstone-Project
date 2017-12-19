@@ -1,11 +1,17 @@
 <?xml version='1.0'?>
 <launch>
     <node pkg="rviz" type="rviz" name="rviz"
-        args="--display-config $(find carla_visualization)/rviz/custom.rviz"/>
-    
-    <node pkg="carla_visualization" type="carla_rqt.sh" name="carla_rqt"/>
+        args="--display-config $(find carla_visualization)/rviz/default.rviz"/>
+
+    <!--node pkg="carla_visualization" type="carla_rqt.sh" name="carla_rqt"/-->
 
     <!--node pkg="carla_visualization" type="carla_rqt_graph.sh" name="carla_rqt_graph"/-->
+
+    <node pkg="carla_visualization" type="carla_rostopic.sh" name="carla_rostopic"/>
+
+    <node name="DashCam" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="image_color" />
+    </node>
 
     <node pkg="carla_visualization" type="carla_visualization.py" name="carla_visualization"/>
 </launch>

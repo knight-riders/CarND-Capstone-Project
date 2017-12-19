@@ -4,7 +4,7 @@
     <node pkg="rosbag" type="play" name="rosbag" args="-l $(find styx)../../bag/1rst_feedback.bag /traffic_waypoint:=/actual/traffic_waypoint /vehicle/throttle_cmd:=/actual/throttle_cmd /vehicle/steering_cmd:=/actual/steering_cmd /vehicle/brake_cmd:=/actual/brake_cmd" required="true"/>
 
     <!--Visualization Node -->
-    <include file="$(find carla_visualization)/launch/carla_visualization_rosbag_test.launch"/>
+    <include file="$(find carla_visualization)/launch/carla_visualization.launch"/>
 
     <!--DBW Node -->
     <include file="$(find twist_controller)/launch/dbw.launch"/>

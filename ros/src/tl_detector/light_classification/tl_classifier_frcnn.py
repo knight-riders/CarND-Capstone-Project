@@ -2,7 +2,7 @@ from styx_msgs.msg import TrafficLight
 import numpy as np
 import tensorflow as tf
 
-PATH_TO_CKPT = '../../../tl_detector/fine_tuned_site_model/frozen_inference_graph.pb'
+PATH_TO_CKPT = '../../../tl_detector/fine_tuned_sim_model/frozen_inference_graph.pb'
 
 
 class TLClassifier(object):
