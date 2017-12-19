@@ -1,7 +1,0 @@
-<?xml version='1.0'?>
-<launch>
-
-    <!-- visualization Node -->
-    <include file="$(find carla_visualization)/launch/carla_visualization.launch"/>
-
-</launch>
