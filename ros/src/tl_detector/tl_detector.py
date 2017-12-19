@@ -5,7 +5,7 @@ from styx_msgs.msg import TrafficLightArray, TrafficLight
 from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-from light_classification.tl_classifier import TLClassifier
+from light_classification.tl_classifier_frcnn import TLClassifier
 from copy import copy
 import cv2
 import math
@@ -271,9 +271,12 @@ class TLDetector(object):
 
         if self.pose is not None:
             stopline_idx = self.get_closest_stopline_idx()
-            if stopline_idx is not None:
+            if stopline_idx is not None and len(self.lights) >= 1:
                 sl_x, sl_y = self.stopline_positions[stopline_idx]
                 stopline_wp_idx = self.get_stopline_wp_idx(sl_x, sl_y)
+                rospy.loginfo("Stopline waypoint index "+ str(stopline_wp_idx))
+                rospy.loginfo("Stopline index "+ str(stopline_idx))
+
                 light = self.lights[stopline_idx]
 
         if light is not None:
